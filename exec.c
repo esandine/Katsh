@@ -36,6 +36,10 @@ char** parse_cmd(char* input){
   }
   return parse;
 }
+
+/**
+ * Run a command from input
+ */
 int run_cmd(){
   char input[42];
   fgets(input, sizeof(input), stdin);
@@ -52,7 +56,17 @@ int run_cmd(){
   return 0;
 }
 
-
+int run_cmd_fork(){
+  int pid = fork();
+  if(pid==0){
+    run_cmd();
+  }else{
+    int status = 0;
+    wait(pid,&status,0);
+  }
+}
 int main(){
-  run_cmd();
+  while(1){
+    run_cmd_fork();
+  }
 }
