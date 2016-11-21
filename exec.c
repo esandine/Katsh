@@ -17,14 +17,11 @@ int num_spaces(char* str){
 }
 
 /**
- * Runs a command from stdin
+ * Parse a command from input
  */
-int run_cmd(){
-  char input[42];
-  fgets(input, sizeof(input), stdin);
-  *strstr(input,"\n")=0;
-  //printf("Input: %s\n",input);
-  //printf("Spaces: %d\n", num_spaces(input));
+
+char** parse_cmd(char* input){
+  *strstr(input,"\n")=0;//Replaces newline with null
   char ** parse = (char **)calloc(sizeof(char *), num_spaces(input) + 2);
   char ctr = 0;
   char* next = input;
@@ -37,10 +34,25 @@ int run_cmd(){
     //printf("%s\n", parse[ctr]);
     ctr++;
   }
+  return parse;
+}
+int run_cmd(){
+  char input[42];
+  fgets(input, sizeof(input), stdin);
+  //printf("Input: %s\n",input);
+  //printf("Spaces: %d\n", num_spaces(input));
+  char ** parse = parse_cmd(input);
+  /*ctr = 0;
+  while(parse[ctr]){
+    printf("%s\n", parse[ctr]);
+    ctr++;
+    }*/
   execvp(parse[0],parse);
   free(parse);
   return 0;
 }
+
+
 int main(){
   run_cmd();
 }
