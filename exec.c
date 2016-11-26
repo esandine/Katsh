@@ -40,9 +40,7 @@ char** parse_cmd(char* input){
 /**
  * Run a command from input
  */
-int run_cmd(){
-  char input[42];
-  fgets(input, sizeof(input), stdin);
+int run_cmd(char* input){
   //printf("Input: %s\n",input);
   //printf("Spaces: %d\n", num_spaces(input));
   char ** parse = parse_cmd(input);
@@ -56,17 +54,30 @@ int run_cmd(){
   return 0;
 }
 
-int run_cmd_fork(){
+int run_cmd_fork(char* input){
   int pid = fork();
   if(pid==0){
-    run_cmd();
+    run_cmd(input);
   }else{
     int status = 0;
-    wait(pid,&status,0);
+    waitpid(pid,&status,0);
   }
+  return 0;
 }
+
+/*int run_cmd_semi(char* input){
+
+
+  char* next = in;
+  strsep(&next, ";");
+  
+  
+  
+  }*/
 int main(){
+  char input[42];
   while(1){
-    run_cmd_fork();
+    fgets(input, sizeof(input), stdin);
+    run_cmd_fork(input);
   }
 }
