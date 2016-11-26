@@ -53,7 +53,9 @@ int run_cmd(char* input){
   free(parse);
   return 0;
 }
-
+/**
+ * Forks a process to run a command
+ */
 int run_cmd_fork(char* input){
   int pid = fork();
   if(pid==0){
@@ -64,15 +66,14 @@ int run_cmd_fork(char* input){
   }
   return 0;
 }
-
+/**
+ * Recursively splits the commands and runs them
+ */
 int run_cmd_semi(char* input){
   char* next = input;
   char* first = strsep(&next, ";");
-  //printf("First: %s\n", first);
-  //printf("Next: %s\n", next);
   run_cmd_fork(first);
   if(next){
-    //printf("iter1 done\n");
     run_cmd_semi(next);
   }
   return 0;
