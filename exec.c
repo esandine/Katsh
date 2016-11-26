@@ -21,7 +21,7 @@ int num_spaces(char* str){
  */
 
 char** parse_cmd(char* input){
-  *strstr(input,"\n")=0;//Replaces newline with null
+  //*strstr(input,"\n")=0;//Replaces newline with null
   char ** parse = (char **)calloc(sizeof(char *), num_spaces(input) + 2);
   char ctr = 0;
   char* next = input;
@@ -65,19 +65,24 @@ int run_cmd_fork(char* input){
   return 0;
 }
 
-/*int run_cmd_semi(char* input){
-
-
-  char* next = in;
-  strsep(&next, ";");
-  
-  
-  
-  }*/
+int run_cmd_semi(char* input){
+  char* next = input;
+  char* first = strsep(&next, ";");
+  //printf("First: %s\n", first);
+  //printf("Next: %s\n", next);
+  run_cmd_fork(first);
+  if(next){
+    //printf("iter1 done\n");
+    run_cmd_semi(next);
+  }
+  return 0;
+}
 int main(){
-  char input[42];
+  char input[256];
   while(1){
     fgets(input, sizeof(input), stdin);
-    run_cmd_fork(input);
+    *strstr(input,"\n")=0;//Replaces newline with null
+    run_cmd_semi(input);
   }
 }
+
