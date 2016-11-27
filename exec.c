@@ -28,6 +28,9 @@ char** parse_cmd(char* input){
   int ctr = 0;
   char* next = input;
   while(next){
+    while (next[0] == ' ' || next[0] == '\t') {
+      next++;
+    }
     parse[ctr]=strsep(&next, " ");
     ctr++;
   }
