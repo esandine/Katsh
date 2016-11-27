@@ -86,6 +86,7 @@ void run_cmd_semi(char* input){
 int main(){
   char input[256];
   while(1){
+    printf("$ ");
     fgets(input, sizeof(input), stdin);
     *strstr(input,"\n")=0;//Replaces newline with null
     run_cmd_semi(input);
