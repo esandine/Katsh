@@ -3,6 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 /**
  * Counts the number of spaces in a string and returns it
  */
@@ -19,11 +22,10 @@ int num_spaces(char* str){
 /**
  * Parse a command from input
  */
-
 char** parse_cmd(char* input){
   //*strstr(input,"\n")=0;//Replaces newline with null
   char ** parse = (char **)calloc(sizeof(char *), num_spaces(input) + 2);
-  char ctr = 0;
+  int ctr = 0;
   char* next = input;
   while(next){
     parse[ctr]=strsep(&next, " ");
@@ -31,7 +33,6 @@ char** parse_cmd(char* input){
   }
   ctr = 0;
   while(parse[ctr]){
-    //printf("%s\n", parse[ctr]);
     ctr++;
   }
   return parse;
@@ -41,43 +42,47 @@ char** parse_cmd(char* input){
  * Run a command from input
  */
 int run_cmd(char* input){
-  //printf("Input: %s\n",input);
-  //printf("Spaces: %d\n", num_spaces(input));
   char ** parse = parse_cmd(input);
-  /*ctr = 0;
-  while(parse[ctr]){
-    printf("%s\n", parse[ctr]);
-    ctr++;
-    }*/
   execvp(parse[0],parse);
   free(parse);
   return 0;
 }
+
 /**
  * Forks a process to run a command
  */
 int run_cmd_fork(char* input){
-  int pid = fork();
+  pid_t pid = fork();
   if(pid==0){
     run_cmd(input);
   }else{
     int status = 0;
-    waitpid(pid,&status,0);
+    waitpid(pid, &status, 0);
   }
   return 0;
 }
+
 /**
- * Recursively splits the commands and runs them
+ * Run a semicolon-separated list of commands at *input, or does nothing
+ * if input is NULL
  */
-int run_cmd_semi(char* input){
-  char* next = input;
-  char* first = strsep(&next, ";");
-  run_cmd_fork(first);
-  if(next){
+void run_cmd_semi(char* input){
+  if (input == NULL) {
+    return;
+  }
+  // Skip leading whitespace
+  while (input[0] == ' ' || input[0] == '\t') {
+    input++;
+  }
+  // Proceed if input is non-empty
+  if (input[0]) {
+    char* next = input;
+    char* first = strsep(&next, ";");
+    run_cmd_fork(first);
     run_cmd_semi(next);
   }
-  return 0;
 }
+
 int main(){
   char input[256];
   while(1){
@@ -85,5 +90,6 @@ int main(){
     *strstr(input,"\n")=0;//Replaces newline with null
     run_cmd_semi(input);
   }
+  return 0;
 }
 
