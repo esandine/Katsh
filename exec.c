@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <fcntl.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 
 /**
@@ -51,6 +52,7 @@ char** parse_cmd(char* input){
  */
 int run_cmd(char* input){
   char ** parse = parse_cmd(input);
+  
   execvp(parse[0],parse);
   free(parse);
   return 0;
@@ -71,6 +73,91 @@ int run_cmd_fork(char* input){
 }
 
 /**
+ *Args: Command that outputs to a file
+ *Return: Void
+ *What it Does: Executes a command and instead of printing to stdout, it prints
+ *to a file.
+ */
+void run_cmd_stdout(char* input){
+  if (input == NULL) {
+    return;
+  }
+  // Proceed if input is non-empty
+  if (input[0]) {
+    char* next = input;
+    char* first = strsep(&next, ">");
+    while (next[0] == ' ' || next[0] == '\t') {
+      next++;
+    }
+    while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t'){
+      next[strlen(next) - 1] = 0;;
+    }
+    while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t')
+    {
+      first[strlen(first) - 1] = 0;;
+    }
+    //copies stdout elsewhere. oldout stores it
+    int oldout = dup(1);
+    //opens the file specified after the >
+    int fil;
+    if( access( next, F_OK ) != -1 ) {
+      fil = open(next, O_RDWR | O_TRUNC);
+    } else {
+      printf("got here\n");
+      fil = open(next, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    }
+
+    //redirects stdout into the file
+    dup2(fil, 1);
+    run_cmd_fork(first);
+    //restores stdout to fd 1
+    dup2(oldout, 1);
+    close(fil);
+  }
+}
+
+
+/**
+ *Args: Command that inputs from a file
+ *Return: Void
+ *What it Does: Executes a command and instead taking arguments from stdin, it  *takes commands from a file.
+ */
+void run_cmd_stdin(char* input){
+
+  if (input == NULL) {
+    return;
+  }
+  // Proceed if input is non-empty
+  if (input[0]) {
+    char* next = input;
+    char* first = strsep(&next, "<");
+    while (next[0] == ' ' || next[0] == '\t') {
+      next++;
+    }
+    while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t'){
+      next[strlen(next) - 1] = 0;;
+    }
+    while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t')
+    {
+      first[strlen(first) - 1] = 0;;
+    }
+    //copies stdout elsewhere. oldout stores it
+    int oldin = dup(0);
+    //opens the file specified after the <
+    int fil;
+    fil = open(next, O_RDONLY);
+
+    //redirects stdin into the file
+    dup2(fil, 0);
+    run_cmd_fork(first);
+    //restores stdin to fd o
+    dup2(oldin, 0);
+    close(fil);
+  }
+  
+}
+
+/**
  * Run a semicolon-separated list of commands at *input, or does nothing
  * if input is NULL
  */
@@ -86,10 +173,20 @@ void run_cmd_semi(char* input){
   if (input[0]) {
     char* next = input;
     char* first = strsep(&next, ";");
-    run_cmd_fork(first);
-    run_cmd_semi(next);
+    if(strchr(first, '>')){
+      run_cmd_stdout(first);
+    }
+    else if(strchr(first, '<')){
+      run_cmd_stdin(first);
+    }
+    else{
+      run_cmd_fork(first);
+    }
+      run_cmd_semi(next);
   }
 }
+
+
 
 int main(){
   char input[256];
