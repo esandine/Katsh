@@ -20,17 +20,21 @@ int num_spaces(char* str){
 }
 
 /**
- * Parse a command from input
+ * Parse a command from the NULL-terminated string `char *input`
  */
 char** parse_cmd(char* input){
-  //*strstr(input,"\n")=0;//Replaces newline with null
   char ** parse = (char **)calloc(sizeof(char *), num_spaces(input) + 2);
   int ctr = 0;
   char* next = input;
   while(next){
+    // Skip leading whitespace
     while (next[0] == ' ' || next[0] == '\t') {
       next++;
     }
+    if (next[0] == '\0') {
+      break;
+    }
+    // Otherwise, there is an argument to parse
     parse[ctr]=strsep(&next, " ");
     ctr++;
   }
