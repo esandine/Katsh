@@ -114,9 +114,9 @@ void run_cmd_stdout(char* input){
       next[strlen(next) - 1] = 0;;
     }
     while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t')
-    {
-      first[strlen(first) - 1] = 0;;
-    }
+      {
+	first[strlen(first) - 1] = 0;;
+      }
     //copies stdout elsewhere. oldout stores it
     int oldout = dup(1);
     //opens the file specified after the >
@@ -159,9 +159,9 @@ void run_cmd_stdin(char* input){
       next[strlen(next) - 1] = 0;;
     }
     while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t')
-    {
-      first[strlen(first) - 1] = 0;;
-    }
+      {
+	first[strlen(first) - 1] = 0;;
+      }
     //copies stdout elsewhere. oldout stores it
     int oldin = dup(0);
     //opens the file specified after the <
@@ -204,7 +204,7 @@ void run_cmd_semi(char* input){
     else{
       exited = run_cmd_fork(first);
     }
-      run_cmd_semi(next);
+    run_cmd_semi(next);
   }
 }
 
@@ -213,12 +213,13 @@ void run_cmd_semi(char* input){
 int main(){
   signal(SIGINT, sighandler);
   char input[256];
+  char cwd[256];
   while(1){
-    printf("$ ");
+    getcwd(cwd, 255);
+    printf("%s $ ", cwd);
     fgets(input, sizeof(input), stdin);
     *strstr(input,"\n")=0;//Replaces newline with null
     run_cmd_semi(input);
   }
   return 0;
 }
-
