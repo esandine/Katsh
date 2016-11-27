@@ -6,17 +6,24 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <signal.h>
 
+static void sighandler(int signo){
+  if(signo == SIGINT){
+    printf("exiting\n\n");
+    exit(0);
+  }
+}
 int check_cmd(char** parse){
-  if(strcmp(parse[0], "cd")==0){
+  if(strcmp(parse[0], "exit")==0){
+    kill(getppid(),SIGINT);
+  }else if(strcmp(parse[0], "cd")==0){
     chdir(parse[1]);
   }else{
     execvp(parse[0],parse);
   }
-  return 0;
+  return 1;
 }
-
-
 /**
  * Counts the number of blanks (tabs or spaces) in a string and returns it
  */
@@ -62,8 +69,13 @@ char** parse_cmd(char* input){
  */
 int run_cmd(char* input){
   char ** parse = parse_cmd(input);
-  check_cmd(parse);
-  free(parse);
+  if(strcmp(parse[0], "exit")==0){
+    kill(getppid(),SIGINT);
+  }else if(strcmp(parse[0], "cd")==0){
+    chdir(parse[1]);
+  }else{
+    execvp(parse[0],parse);
+  }
   return 0;
 }
 
@@ -171,6 +183,7 @@ void run_cmd_stdin(char* input){
  * if input is NULL
  */
 void run_cmd_semi(char* input){
+  char exited = 0;
   if (input == NULL) {
     return;
   }
@@ -189,7 +202,7 @@ void run_cmd_semi(char* input){
       run_cmd_stdin(first);
     }
     else{
-      run_cmd_fork(first);
+      exited = run_cmd_fork(first);
     }
       run_cmd_semi(next);
   }
@@ -198,6 +211,7 @@ void run_cmd_semi(char* input){
 
 
 int main(){
+  signal(SIGINT, sighandler);
   char input[256];
   while(1){
     printf("$ ");
