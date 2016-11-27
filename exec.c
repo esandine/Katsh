@@ -7,6 +7,16 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+int check_cmd(char** parse){
+  if(strcmp(parse[0], "cd")==0){
+    chdir(parse[1]);
+  }else{
+    execvp(parse[0],parse);
+  }
+  return 0;
+}
+
+
 /**
  * Counts the number of blanks (tabs or spaces) in a string and returns it
  */
@@ -52,8 +62,7 @@ char** parse_cmd(char* input){
  */
 int run_cmd(char* input){
   char ** parse = parse_cmd(input);
-  
-  execvp(parse[0],parse);
+  check_cmd(parse);
   free(parse);
   return 0;
 }
