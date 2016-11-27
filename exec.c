@@ -7,13 +7,14 @@
 #include <sys/wait.h>
 
 /**
- * Counts the number of spaces in a string and returns it
+ * Counts the number of blanks (tabs or spaces) in a string and returns it
  */
-int num_spaces(char* str){
+int num_blanks(char* str){
   int spaces = 0;
-  while(*str){
-    if(*str==' ')
+  while (*str) {
+    if (*str==' ' || *str=='\t') {
       spaces++;
+    }
     str++;
   }
   return spaces;
@@ -23,7 +24,7 @@ int num_spaces(char* str){
  * Parse a command from the NULL-terminated string `char *input`
  */
 char** parse_cmd(char* input){
-  char ** parse = (char **)calloc(sizeof(char *), num_spaces(input) + 2);
+  char ** parse = (char **)calloc(sizeof(char *), num_blanks(input) + 2);
   int ctr = 0;
   char* next = input;
   while(next){
