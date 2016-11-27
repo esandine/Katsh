@@ -8,21 +8,17 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+/**
+ *Args: Signal
+ *Return: exits if the signal is SIGINT
+ *What it Does: Catches the exit signal that is sent from the child process to
+ *the parent if the command is exit
+ */
 static void sighandler(int signo){
   if(signo == SIGINT){
     printf("exiting\n\n");
     exit(0);
   }
-}
-int check_cmd(char** parse){
-  if(strcmp(parse[0], "exit")==0){
-    kill(getppid(),SIGINT);
-  }else if(strcmp(parse[0], "cd")==0){
-    chdir(parse[1]);
-  }else{
-    execvp(parse[0],parse);
-  }
-  return 1;
 }
 /**
  * Counts the number of blanks (tabs or spaces) in a string and returns it
@@ -71,6 +67,7 @@ int run_cmd(char* input){
   char ** parse = parse_cmd(input);
   if(strcmp(parse[0], "exit")==0){
     kill(getppid(),SIGINT);
+    return 0;//Makes the program exit faster
   }else if(strcmp(parse[0], "cd")==0){
     chdir(parse[1]);
   }else{
@@ -143,6 +140,7 @@ void run_cmd_stdout(char* input){
  *Return: Void
  *What it Does: Executes a command and instead taking arguments from stdin, it  *takes commands from a file.
  */
+
 void run_cmd_stdin(char* input){
 
   if (input == NULL) {
