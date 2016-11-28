@@ -61,29 +61,21 @@ char** parse_cmd(char* input){
 }
 
 /**
- * Run a command from input
- */
-int run_cmd(char* input){
-  char ** parse = parse_cmd(input);
-  if(strcmp(parse[0], "exit")==0){
-    kill(getppid(),SIGINT);
-    return 0;//Makes the program exit faster
-  }else if(strcmp(parse[0], "cd")==0){
-    chdir(parse[1]);
-  }else{
-    execvp(parse[0],parse);
-  }
-  return 0;
-}
-
-/**
- * Forks a process to run a command
+ * Runs a command from *input in forked process, and wait for it to finish
  */
 int run_cmd_fork(char* input){
+  char ** parse = parse_cmd(input);
+  if (strcmp(parse[0], "exit")==0) {
+    exit(0);
+  } else if (strcmp(parse[0], "cd")==0) {
+    chdir(parse[1]);
+    return 0;
+  }
+  // Otherwise, fork and execute the command
   pid_t pid = fork();
-  if(pid==0){
-    run_cmd(input);
-  }else{
+  if (pid==0) {
+    execvp(parse[0], parse);
+  } else {
     int status = 0;
     waitpid(pid, &status, 0);
   }
