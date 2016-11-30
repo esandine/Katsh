@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -70,8 +73,8 @@ char** parse_cmd(char* input){
 /**
  *Args: Input string
  *Returns: 0
- *What it does: It parses the input, then checks if the first command is cd or 
- *exit. If so it runs the command. If this is not the case it forks a child 
+ *What it does: It parses the input, then checks if the first command is cd or
+ *exit. If so it runs the command. If this is not the case it forks a child
  *process to run the command, and waits for the child process to run
  */
 int run_cmd_fork(char* input){
@@ -84,8 +87,19 @@ int run_cmd_fork(char* input){
   }
   // Otherwise, fork and execute the command
   pid_t pid = fork();
+  int sd = shmget(24601, 4, IPC_CREAT | 0666);
   if (pid==0) {
     execvp(parse[0], parse);
+    // If we get here, it failed
+    int e_errno = errno;
+    if (e_errno == ENOENT) {
+        printf("katsh: %s: no such file or directory\n", parse[0]);
+    } else if (e_errno == EACCES) {
+        printf("katsh: %s: permission denied\n", parse[0]);
+    } else {
+        printf("katsh: an error has occured. errno: %d\n", e_errno);
+    }
+    exit(1);
   } else {
     int status = 0;
     waitpid(pid, &status, 0);
