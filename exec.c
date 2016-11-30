@@ -21,7 +21,10 @@ static void sighandler(int signo){
   }
 }
 /**
- * Counts the number of blanks (tabs or spaces) in a string and returns it
+ *Args: Input string
+ *Return: the number of spaces and tabs in the Input
+ *What it Does: counts the number of blanks in the string. This is used to
+ *parse in parse_cmd
  */
 int num_blanks(char* str){
   int spaces = 0;
@@ -35,7 +38,11 @@ int num_blanks(char* str){
 }
 
 /**
- * Parse a command from the NULL-terminated string `char *input`
+ *Args: Inputs string
+ *Returns: An array of strings representing the command
+ *What it does: Counts the number of spaces then callocs the appropriate
+ *ammount of space. It then uses strsep to split the command into a list 
+ *of arguements
  */
 char** parse_cmd(char* input){
   char ** parse = (char **)calloc(sizeof(char *), num_blanks(input) + 2);
@@ -59,9 +66,12 @@ char** parse_cmd(char* input){
   }
   return parse;
 }
-
 /**
- * Runs a command from *input in forked process, and wait for it to finish
+ *Args: Input string
+ *Returns: 0
+ *What it does: It parses the input, then checks if the first command is cd or 
+ *exit. If so it runs the command. If this is not the case it forks a child 
+ *process to run the command, and waits for the child process to run
  */
 int run_cmd_fork(char* input){
   char ** parse = parse_cmd(input);
@@ -169,11 +179,15 @@ void run_cmd_stdin(char* input){
 }
 
 /**
- * Run a semicolon-separated list of commands at *input, or does nothing
- * if input is NULL
+ *Args: Input string seperated by semicolons
+ *Returns: void
+ *What it does: It first checks if the input is negative. If this is not the 
+ *case it checks for special characters, and runs either run_cmd_stdin, 
+ *run_cmd_stdout, or just the normal run_cmd_fork on the portion of the command
+ *before the first semicolon. It then recursively calls itself on the rest of
+ *the input string.
  */
 void run_cmd_semi(char* input){
-  char exited = 0;
   if (input == NULL) {
     return;
   }
@@ -192,9 +206,9 @@ void run_cmd_semi(char* input){
       run_cmd_stdin(first);
     }
     else{
-      exited = run_cmd_fork(first);
+      run_cmd_fork(first);
     }
-    run_cmd_semi(next);
+    return run_cmd_semi(next);
   }
 }
 
