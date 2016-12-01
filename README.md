@@ -19,6 +19,29 @@ Files and Function Headers:
 
 exec.c
 
+    /*========int num_blanks()========
+	  *Args: char* str
+      *Return: the number of spaces and tabs in the Input
+      *What it Does: counts the number of blanks in the string. This is used to
+      *parse in parse_cmd
+    ========*/
+
+    /*========char** parse_cmd()========
+      *Args: char* input
+      *Returns: An array of strings representing the command
+      *What it does: Counts the number of spaces then callocs the appropriate
+      *ammount of space. It then uses strsep to split the command into a list 
+      *of arguements
+    ========*/
+
+     /*========int run_cmd_fork()========
+       *Args: char* input
+       *Returns: 0
+       *What it does: It parses the input, then checks if the first command is cd or
+       *exit. If so it runs the command. If this is not the case it forks a child
+       *process to run the command, and waits for the child process to run
+     ========*/
+
     int num_blanks(char* str);
     char** parse_cmd(char* input);
     int run_cmd_fork(char* input);
