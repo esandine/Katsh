@@ -236,22 +236,31 @@ void run_cmd_stdin(char* input){
 }
 
 /**
- *Args: A command containing an && operator
+ *Args: A command containing an &&, || operator. Mode is if it is && or ||
+ *Mode = 0 is ||. Mode = 1 is &&.
  *Return: Void
- *What it Does: Executes the first command, and if it works executes the
- *second command
+ *What it Does: If mode = 1: Executes the first command, and if it works 
+ *executes the second command
+ *If mode = 0: executes the first command and if it fails executes the second
+ *command
  */
 
-void run_cmd_and(char* input){
+void run_cmd_andor(char* input, char mode){
   //Skip whitespace
   while (input[0] == ' ' || input[0] == '\t') {
     input++;
   }
   char* next = input;
-  char* first = strsep(&next, "&&");
-  next +=1;//moves past the extra "&"
+  char* first;
+  if(mode){
+    first = strsep(&next, "&&");
+  }else{
+    first = strsep(&next, "||");
+  }
+  next +=1;//moves past the extra "&" or "|"
   int status = run_cmd_fork(first);
-  if(!status){
+  //If it works and status is and, or if it fails and status is or.
+  if((!status && mode)||(status && !mode)){
     run_cmd_fork(next);
   }
 }
@@ -295,8 +304,11 @@ void run_cmd_semi(char* input){
     else if(strchr(first, '<')){
       run_cmd_stdin(first);
     }
+    else if(strstr(first, "||")){
+      run_cmd_andor(first, 0);
+    }
     else if(strstr(first, "&&")){
-      run_cmd_and(first);
+      run_cmd_andor(first, 1);
     }
     else{
       run_cmd_fork(first);
