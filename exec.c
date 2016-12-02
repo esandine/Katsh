@@ -335,10 +335,7 @@ void run_cmd_semi(char* input){
     }
     else if(strchr(first, '<')){
       run_cmd_stdin(first);
-    } else if (strchr(first, '|')) {
-        run_pipeline(first);
-    }
-    else if(strstr(first, "&&")||strstr(first, "||")){
+    }else if(strstr(first, "&&")||strstr(first, "||")){
       //If both are present reads left to right
       if(strstr(first, "&&")&&strstr(first, "||")){
 	if(strstr(first, "&&")<strstr(first, "||")){
@@ -352,8 +349,9 @@ void run_cmd_semi(char* input){
       }else{//if just or
 	run_cmd_andor(first, 0);
       }
+    }else if (strchr(first, '|')) {
+      run_pipeline(first);
     }
-
     else{
       run_cmd_fork(first);
     }
