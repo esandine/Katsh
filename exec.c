@@ -304,11 +304,20 @@ void run_cmd_semi(char* input){
     else if(strchr(first, '<')){
       run_cmd_stdin(first);
     }
-    else if(strstr(first, "&&")){
-      run_cmd_andor(first, 1);
-    }
-    else if(strstr(first, "||")){
-      run_cmd_andor(first, 0);
+    else if(strstr(first, "&&")||strstr(first, "||")){
+      //If both are present reads left to right
+      if(strstr(first, "&&")&&strstr(first, "||")){
+	if(strstr(first, "&&")<strstr(first, "||")){
+	  run_cmd_andor(first, 1);
+	}else{
+	  run_cmd_andor(first, 0);
+	}
+       //if just and
+      }else if(strstr(first, "&&")){
+	run_cmd_andor(first, 1);
+      }else{//if just or
+	run_cmd_andor(first, 0);
+      }
     }
 
     else{
