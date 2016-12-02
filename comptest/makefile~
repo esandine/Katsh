@@ -1,0 +1,8 @@
+strtest: comptest.c
+	gcc readline-master/readline.c
+	gcc readline-master/history.c
+	gcc comptest.c
+run:
+	./a.out
+clean:
+	rm a.out

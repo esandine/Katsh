@@ -261,7 +261,7 @@ void run_cmd_andor(char* input, char mode){
   int status = run_cmd_fork(first);
   //If it works and status is and, or if it fails and status is or.
   if((!status && mode)||(status && !mode)){
-    run_cmd_semi(next);
+    run_cmd_fork(next);
   }
 }
 /**
@@ -304,13 +304,12 @@ void run_cmd_semi(char* input){
     else if(strchr(first, '<')){
       run_cmd_stdin(first);
     }
-    else if(strstr(first, "&&")){
-      run_cmd_andor(first, 1);
-    }
     else if(strstr(first, "||")){
       run_cmd_andor(first, 0);
     }
-
+    else if(strstr(first, "&&")){
+      run_cmd_andor(first, 1);
+    }
     else{
       run_cmd_fork(first);
     }
