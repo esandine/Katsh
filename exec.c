@@ -247,11 +247,11 @@ void run_cmd_stdin(char* input){
       next++;
     }
     while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t'){
-      next[strlen(next) - 1] = 0;;
+      next[strlen(next) - 1] = 0;
     }
     while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t')
       {
-	first[strlen(first) - 1] = 0;;
+	  first[strlen(first) - 1] = 0;
       }
     //copies stdout elsewhere. oldout stores it
     int oldin = dup(0);
@@ -297,6 +297,44 @@ void run_cmd_andor(char* input, char mode){
     run_cmd_semi(next);
   }
 }
+
+void run_redirectable(char* input) {
+}
+
+void run_cmd_chain(char* input) {
+  //Skip whitespace
+  while (input[0] == ' ' || input[0] == '\t') {
+    input++;
+  }
+  char* and_pos = strstr(first, "&&");
+  char* or_pos = strstr(first, "||");
+  if (and_pos && or_pos) {
+      char* next = input;
+      int runnext = 0;
+      if(and_pos < or_pos) {
+	  char* first = strsep(&next, "&");
+	  int status = run_redirectable(first);
+	  runnext = status;
+      } else {
+	  char* first = strsep(&next, "|");
+	  int status = run_redirectable(first);
+	  runnext = !status;
+      }
+      next += 1; // skip the other & or |
+      if (runnext) {
+	  run_cmd_chain(next);
+      }
+  } else {
+ 
+  }
+	//if just and
+    }else if(strstr(first, "&&")){
+	run_cmd_andor(first, 1);
+    }else{//if just or
+	run_cmd_andor(first, 0);
+    }
+}
+
 /**
  *Args: Input string seperated by semicolons
  *Returns: void
@@ -318,10 +356,10 @@ void run_cmd_semi(char* input){
   if (input[0]) {
     char* next = input;
     char* first = strsep(&next, ";");
-    if(strstr(first, ">>") && !strstr(first, "2>>")){
+    if(strstr(first, "&&")||strstr(first, "||")){
+    }else if(strstr(first, ">>") && !strstr(first, "2>>")){
       run_cmd_stdout(first, 1);
-    }
-    else if(strstr(first, "2>") && !strstr(first, "2>>")){
+    }else if(strstr(first, "2>") && !strstr(first, "2>>")){
       run_cmd_stdout(first, 2);
     }
     else if(strstr(first, "2>>")){
@@ -335,20 +373,6 @@ void run_cmd_semi(char* input){
     }
     else if(strchr(first, '<')){
       run_cmd_stdin(first);
-    }else if(strstr(first, "&&")||strstr(first, "||")){
-      //If both are present reads left to right
-      if(strstr(first, "&&")&&strstr(first, "||")){
-	if(strstr(first, "&&")<strstr(first, "||")){
-	  run_cmd_andor(first, 1);
-	}else{
-	  run_cmd_andor(first, 0);
-	}
-       //if just and
-      }else if(strstr(first, "&&")){
-	run_cmd_andor(first, 1);
-      }else{//if just or
-	run_cmd_andor(first, 0);
-      }
     }else if (strchr(first, '|')) {
       run_pipeline(first);
     }
