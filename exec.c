@@ -107,6 +107,42 @@ int run_cmd_fork(char* input){
   }
 }
 
+
+int run_pipeline(char *cmd) {
+    char* first = strsep(&cmd, "|");
+    char** parsed = parse_cmd(first);
+    if (cmd == NULL) {
+        return execvp(parsed[0], parsed);
+    }
+    pid_t fds[2];
+    if (pipe(fds) == -1) {
+        printf("pipe failed!");
+        exit(1);
+    }
+    pid_t p = fork();
+    if (p == 0) {
+        // Redirect stdout to the input of fds
+        dup2(fds[1], STDOUT_FILENO);
+        execvp(parsed[0], parsed);
+        exit(1); // If it's gotten here, the command failed
+    } else {
+        close(fds[1]);
+        pid_t q = fork();
+        if (q == 0) {
+            dup2(fds[0], STDIN_FILENO);
+            run_pipeline(cmd);
+            exit(1);
+        } else {
+            close(fds[0]);
+            int pstatus = 0, qstatus = 0;
+            waitpid(p, &pstatus, 0);
+            waitpid(q, &qstatus, 0);
+        }
+    }
+    return 0;
+}
+
+
 /**
  *Args: Command that outputs to a file
  *Return: Void
@@ -192,41 +228,6 @@ void run_cmd_stdout(char* input, int mode){
     close(fil);
   }
 }
-
-int run_pipeline(char *cmd) {
-    char* first = strsep(&cmd, "|");
-    char** parsed = parse_cmd(first);
-    if (cmd == NULL) {
-        return execvp(parsed[0], parsed);
-    }
-    pid_t fds[2];
-    if (pipe(fds) == -1) {
-        printf("pipe failed!");
-        exit(1);
-    }
-    pid_t p = fork();
-    if (p == 0) {
-        // Redirect stdout to the input of fds
-        dup2(fds[1], STDOUT_FILENO);
-        execvp(parsed[0], parsed);
-        exit(1); // If it's gotten here, the command failed
-    } else {
-        close(fds[1]);
-        pid_t q = fork();
-        if (q == 0) {
-            dup2(fds[0], STDIN_FILENO);
-            run_pipeline(cmd);
-            exit(1);
-        } else {
-            close(fds[0]);
-            int pstatus = 0, qstatus = 0;
-            waitpid(p, &pstatus, 0);
-            waitpid(q, &qstatus, 0);
-        }
-    }
-    return 0;
-}
-
 
 /**
  *Args: Command that inputs from a file
