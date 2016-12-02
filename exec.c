@@ -72,7 +72,7 @@ char** parse_cmd(char* input){
 }
 /**
  *Args: Input string
- *Returns: 0
+ *Returns: status of waitpid
  *What it does: It parses the input, then checks if the first command is cd or
  *exit. If so it runs the command. If this is not the case it forks a child
  *process to run the command, and waits for the child process to run
@@ -103,8 +103,8 @@ int run_cmd_fork(char* input){
   } else {
     int status = 0;
     waitpid(pid, &status, 0);
+    return status;
   }
-  return 0;
 }
 
 /**
@@ -236,6 +236,26 @@ void run_cmd_stdin(char* input){
 }
 
 /**
+ *Args: A command containing an && operator
+ *Return: Void
+ *What it Does: Executes the first command, and if it works executes the
+ *second command
+ */
+
+void run_cmd_and(char* input){
+  //Skip whitespace
+  while (input[0] == ' ' || input[0] == '\t') {
+    input++;
+  }
+  char* next = input;
+  char* first = strsep(&next, "&&");
+  next +=1;//moves past the extra "&"
+  int status = run_cmd_fork(first);
+  if(!status){
+    run_cmd_fork(next);
+  }
+}
+/**
  *Args: Input string seperated by semicolons
  *Returns: void
  *What it does: It first checks if the input is negative. If this is not the 
@@ -274,6 +294,9 @@ void run_cmd_semi(char* input){
     }
     else if(strchr(first, '<')){
       run_cmd_stdin(first);
+    }
+    else if(strstr(first, "&&")){
+      run_cmd_and(first);
     }
     else{
       run_cmd_fork(first);
