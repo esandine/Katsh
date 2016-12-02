@@ -154,12 +154,11 @@ void run_cmd_stdout(char* input, int mode){
       next++;
     }
     while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t'){
-      next[strlen(next) - 1] = 0;;
+      next[strlen(next) - 1] = 0;
     }
-    while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t')
-      {
-	first[strlen(first) - 1] = 0;;
-      }//these whiles take care of blank space
+    while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t') {
+	first[strlen(first) - 1] = 0;
+    }//these whiles take care of blank space
     
     int oldout = dup(1); //copies stdout elsewhere. oldout stores it
     int olderr = dup(2); //copies stderr elsewhere. olderr stores it
@@ -234,10 +233,10 @@ int run_pipeline(char *cmd) {
  *What it Does: Executes a command and instead taking arguments from stdin, it  *takes commands from a file.
  */
 
-void run_cmd_stdin(char* input){
+int run_cmd_stdin(char* input){
 
   if (input == NULL) {
-    return;
+    return 0;
   }
   // Proceed if input is non-empty
   if (input[0]) {
@@ -266,6 +265,7 @@ void run_cmd_stdin(char* input){
     dup2(oldin, 0);
     close(fil);
   }
+  return 0;
 }
 
 /**
@@ -298,7 +298,25 @@ void run_cmd_andor(char* input, char mode){
   }
 }
 
-void run_redirectable(char* input) {
+int run_redirectable(char* input) {
+    if(strstr(input, ">>") && !strstr(input, "2>>")){
+	return run_cmd_stdout(input, 1);
+    }
+    if(strstr(input, "2>") && !strstr(input, "2>>")){
+	return run_cmd_stdout(input, 2);
+    }
+    if(strstr(input, "2>>")){
+	return run_cmd_stdout(input, 3);
+    }
+    if(strstr(input, "&>")){
+	return run_cmd_stdout(input, 4);
+    }
+    if(strstr(input, ">")){
+	return run_cmd_stdout(input, 0);
+    }
+    if(strchr(input, '<')){
+	return run_cmd_stdin(input);
+    }
 }
 
 void run_cmd_chain(char* input) {
@@ -306,8 +324,8 @@ void run_cmd_chain(char* input) {
   while (input[0] == ' ' || input[0] == '\t') {
     input++;
   }
-  char* and_pos = strstr(first, "&&");
-  char* or_pos = strstr(first, "||");
+  char* and_pos = strstr(input, "&&");
+  char* or_pos = strstr(input, "||");
   if (and_pos && or_pos) {
       char* next = input;
       int runnext = 0;
@@ -325,14 +343,8 @@ void run_cmd_chain(char* input) {
 	  run_cmd_chain(next);
       }
   } else {
- 
+      run_redirectable(input);
   }
-	//if just and
-    }else if(strstr(first, "&&")){
-	run_cmd_andor(first, 1);
-    }else{//if just or
-	run_cmd_andor(first, 0);
-    }
 }
 
 /**
@@ -356,30 +368,8 @@ void run_cmd_semi(char* input){
   if (input[0]) {
     char* next = input;
     char* first = strsep(&next, ";");
-    if(strstr(first, "&&")||strstr(first, "||")){
-    }else if(strstr(first, ">>") && !strstr(first, "2>>")){
-      run_cmd_stdout(first, 1);
-    }else if(strstr(first, "2>") && !strstr(first, "2>>")){
-      run_cmd_stdout(first, 2);
-    }
-    else if(strstr(first, "2>>")){
-      run_cmd_stdout(first, 3);
-    }
-    else if(strstr(first, "&>")){
-      run_cmd_stdout(first, 4);
-    }
-    else if(strstr(first, ">")){
-      run_cmd_stdout(first, 0);
-    }
-    else if(strchr(first, '<')){
-      run_cmd_stdin(first);
-    }else if (strchr(first, '|')) {
-      run_pipeline(first);
-    }
-    else{
-      run_cmd_fork(first);
-    }
-    return run_cmd_semi(next);
+    run_cmd_chain(first);
+    run_cmd_semi(next);
   }
 }
 
