@@ -70,6 +70,7 @@ char** parse_cmd(char* input){
   }
   return parse;
 }
+
 /**
  *Args: Input string
  *Returns: 0
@@ -87,7 +88,6 @@ int run_cmd_fork(char* input){
   }
   // Otherwise, fork and execute the command
   pid_t pid = fork();
-  int sd = shmget(24601, 4, IPC_CREAT | 0666);
   if (pid==0) {
     execvp(parse[0], parse);
     // If we get here, it failed
@@ -151,6 +151,40 @@ void run_cmd_stdout(char* input){
   }
 }
 
+int run_pipeline(char *cmd) {
+    char* first = strsep(&cmd, "|");
+    char** parsed = parse_cmd(first);
+    if (cmd == NULL) {
+        return execvp(parsed[0], parsed);
+    }
+    pid_t fds[2];
+    if (pipe(fds) == -1) {
+        printf("pipe failed!");
+        exit(1);
+    }
+    pid_t p = fork();
+    if (p == 0) {
+        // Redirect stdout to the input of fds
+        dup2(fds[1], STDOUT_FILENO);
+        execvp(parsed[0], parsed);
+        exit(1); // If it's gotten here, the command failed
+    } else {
+        close(fds[1]);
+        pid_t q = fork();
+        if (q == 0) {
+            dup2(fds[0], STDIN_FILENO);
+            run_pipeline(cmd);
+            exit(1);
+        } else {
+            close(fds[0]);
+            int pstatus = 0, qstatus = 0;
+            waitpid(p, &pstatus, 0);
+            waitpid(q, &qstatus, 0);
+        }
+    }
+    return 0;
+}
+
 
 /**
  *Args: Command that inputs from a file
@@ -190,7 +224,6 @@ void run_cmd_stdin(char* input){
     dup2(oldin, 0);
     close(fil);
   }
-  
 }
 
 /**
@@ -214,13 +247,13 @@ void run_cmd_semi(char* input){
   if (input[0]) {
     char* next = input;
     char* first = strsep(&next, ";");
-    if(strchr(first, '>')){
+    if (strchr(first, '>')) {
       run_cmd_stdout(first);
-    }
-    else if(strchr(first, '<')){
+    } else if (strchr(first, '<')){
       run_cmd_stdin(first);
-    }
-    else{
+    } else if (strchr(first, '|')) {
+        run_pipeline(first);
+    } else {
       run_cmd_fork(first);
     }
     return run_cmd_semi(next);
