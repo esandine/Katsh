@@ -186,7 +186,7 @@ void run_cmd_stdout(char* input, int mode){
     else if(mode > 1){//modes greater than 1 use stderr
       dup2(fil, 2);//redirects stderr into the file
     }
-    run_cmd_fork(first);
+    run_pipeline(first);
     dup2(oldout, 1);//restores stdout to fd 1
     dup2(olderr, 2);//restores stderr to fd 2
     close(fil);
@@ -261,7 +261,7 @@ void run_cmd_stdin(char* input){
 
     //redirects stdin into the file
     dup2(fil, 0);
-    run_cmd_fork(first);
+    run_pipeline(first);
     //restores stdin to fd o
     dup2(oldin, 0);
     close(fil);
@@ -291,7 +291,7 @@ void run_cmd_andor(char* input, char mode){
     first = strsep(&next, "||");
   }
   next +=1;//moves past the extra "&" or "|"
-  int status = run_cmd_fork(first);
+  int status = run_pipeline(first);
   //If it works and status is and, or if it fails and status is or.
   if((!status && mode)||(status && !mode)){
     run_cmd_semi(next);
