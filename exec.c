@@ -72,130 +72,115 @@ char** parse_cmd(char* input){
 }
 
 /**
- *Args: Input string
- *Returns: status of waitpid
- *What it does: It parses the input, then checks if the first command is cd or
- *exit. If so it runs the command. If this is not the case it forks a child
- *process to run the command, and waits for the child process to run
- */
-int run_cmd_fork(char* input){
-  char ** parse = parse_cmd(input);
-  if (strcmp(parse[0], "exit")==0) {
-    exit(0);
-  } else if (strcmp(parse[0], "cd")==0) {
-    chdir(parse[1]);
-    return 0;
-  }
-  // Otherwise, fork and execute the command
-  pid_t pid = fork();
-  if (pid==0) {
-    execvp(parse[0], parse);
-    // If we get here, it failed
-    int e_errno = errno;
-    if (e_errno == ENOENT) {
-        printf("katsh: %s: no such file or directory\n", parse[0]);
-    } else if (e_errno == EACCES) {
-        printf("katsh: %s: permission denied\n", parse[0]);
-    } else {
-        printf("katsh: an error has occured. errno: %d\n", e_errno);
-    }
-    exit(1);
-  } else {
-    int status = 0;
-    waitpid(pid, &status, 0);
-    return status;
-  }
-}
-
-/**
  *Args: Command that outputs to a file
- *Return: Void
+ *Return: 0 for success, -1 if mode parameter is invalid, otherwise error status of command
  *What it Does: Executes a command and instead of printing to stdout, it prints
  *to a file.
  */
-void run_cmd_stdout(char* input, int mode){
+int run_cmd_stdout(char* input){
   if (input == NULL) {
-    return;
-  }// Proceed if input is non-empty
-  if (input[0]) {
-    char* next = input;
-    char* first;
-    if(mode == 0){
+    return 0;
+  }
+  // Proceed if input is non-empty
+  if (input[0] == NULL) {
+      return 0;
+  }
+  int mode;
+  if(strstr(input, ">>") && !strstr(input, "2>>")){
+      mode = 1;
+  } else if(strstr(input, "2>") && !strstr(input, "2>>")){
+      mode = 2;
+  } else if(strstr(input, "2>>")){
+      mode = 3;
+  } else if(strstr(input, "&>")){
+      mode = 4;
+  } else if(strstr(input, ">")){
+      mode = 0;
+  } else {
+      return -1;
+  }
+  char* next = input;
+  char* first;
+  if(mode == 0){
       first = strsep(&next, ">");
-    }
-    else if(mode == 1){
+  } else if (mode == 1) {
       first = strsep(&next, ">");
       printf("%s\n", next);
       strsep(&next, ">");
       printf("%s\n", next);
-    }
-    else if(mode == 2){
+  } else if (mode == 2) {
       *strstr(next, "2>") = '>';
       first = strsep(&next, ">");
       strsep(&next, ">");
-    }
-    else if(mode == 3){
+  } else if (mode == 3) {
       *strstr(next, "2>") = '>';
       first = strsep(&next, ">");
       strsep(&next, ">");
       strsep(&next, ">");
-    }
-    else if(mode == 4){
+  } else if (mode == 4) {
       *strstr(next, "&>") = '>';
       first = strsep(&next, ">");
       strsep(&next, ">");
-    }
-    else{
+  } else {
       printf("Invalid mode");
-      return;
-    }
-    while (next[0] == ' ' || next[0] == '\t') {
-      next++;
-    }
-    while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t'){
-      next[strlen(next) - 1] = 0;
-    }
-    while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t') {
-	first[strlen(first) - 1] = 0;
-    }//these whiles take care of blank space
-    
-    int oldout = dup(1); //copies stdout elsewhere. oldout stores it
-    int olderr = dup(2); //copies stderr elsewhere. olderr stores it
-    int fil;
-    if( access( next, F_OK ) != -1 ) {
-      if(mode % 2){//gets odd numbered modes. They are the append ones
-	fil = open(next, O_RDWR | O_APPEND);
-      }
-      else{
-	fil = open(next, O_RDWR | O_TRUNC);
-      }
-    }
-    else {
-      if(mode % 2){//gets odd numbered modes. The are the append ones
-	fil = open(next, O_RDWR | O_CREAT | O_APPEND, 0644);
-      }
-      else{
-	fil = open(next, O_RDWR | O_CREAT | O_TRUNC, 0644);
-      }
-    } //opens the file specified after the >
-    if(mode != 2 && mode != 3){//modes 2 and 3 only redirect stderr
-      dup2(fil, 1);//redirects stdout into the file
-    } 
-    else if(mode > 1){//modes greater than 1 use stderr
-      dup2(fil, 2);//redirects stderr into the file
-    }
-    run_pipeline(first);
-    dup2(oldout, 1);//restores stdout to fd 1
-    dup2(olderr, 2);//restores stderr to fd 2
-    close(fil);
+      return -1;
   }
+  while (next[0] == ' ' || next[0] == '\t') {
+      next++;
+  }
+  while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t'){
+      next[strlen(next) - 1] = 0;
+  }
+  while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t') {
+      first[strlen(first) - 1] = 0;
+  }//these whiles take care of blank space
+
+  int oldout = dup(1); //copies stdout elsewhere. oldout stores it
+  int olderr = dup(2); //copies stderr elsewhere. olderr stores it
+  int fil;
+  if( access( next, F_OK ) != -1 ) {
+      if(mode % 2){//gets odd numbered modes. They are the append ones
+          fil = open(next, O_RDWR | O_APPEND);
+      }
+      else{
+          fil = open(next, O_RDWR | O_TRUNC);
+      }
+  }
+  else {
+      if(mode % 2){//gets odd numbered modes. The are the append ones
+          fil = open(next, O_RDWR | O_CREAT | O_APPEND, 0644);
+      }
+      else{
+          fil = open(next, O_RDWR | O_CREAT | O_TRUNC, 0644);
+      }
+  } //opens the file specified after the >
+  if(mode != 2 && mode != 3){//modes 2 and 3 only redirect stderr
+      dup2(fil, 1);//redirects stdout into the file
+  }
+  else if(mode > 1){//modes greater than 1 use stderr
+      dup2(fil, 2);//redirects stderr into the file
+  }
+  int result = run_pipeline(first);
+  dup2(oldout, 1);//restores stdout to fd 1
+  dup2(olderr, 2);//restores stderr to fd 2
+  close(fil);
+  return result;
 }
 
 int run_pipeline(char *cmd) {
     char* first = strsep(&cmd, "|");
+    printf("|first: %s\t; cmd: %s\n", first, cmd);
     char** parsed = parse_cmd(first);
     if (cmd == NULL) {
-        return execvp(parsed[0], parsed);
+        //return execvp(parsed[0], parsed);
+        pid_t pid = fork();
+        if (pid == 0) {
+            execvp(parsed[0], parsed);
+        } else {
+            int status = 0;
+            waitpid(pid, &status, 0);
+            return status;
+        }
     }
     pid_t fds[2];
     if (pipe(fds) == -1) {
@@ -220,50 +205,49 @@ int run_pipeline(char *cmd) {
             int pstatus = 0, qstatus = 0;
             waitpid(p, &pstatus, 0);
             waitpid(q, &qstatus, 0);
+            return qstatus;
         }
     }
-    return 0;
 }
 
 
 /**
  *Args: Command that inputs from a file
- *Return: Void
+ *Return: 0 for success, otherwise error status of command
  *What it Does: Executes a command and instead taking arguments from stdin, it  *takes commands from a file.
  */
 
 int run_cmd_stdin(char* input){
-
   if (input == NULL) {
     return 0;
   }
-  // Proceed if input is non-empty
-  if (input[0]) {
-    char* next = input;
-    char* first = strsep(&next, "<");
-    while (next[0] == ' ' || next[0] == '\t') {
-      next++;
-    }
-    while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t'){
-      next[strlen(next) - 1] = 0;
-    }
-    while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t')
-      {
-	  first[strlen(first) - 1] = 0;
-      }
-    //copies stdout elsewhere. oldout stores it
-    int oldin = dup(0);
-    //opens the file specified after the <
-    int fil;
-    fil = open(next, O_RDONLY);
-
-    //redirects stdin into the file
-    dup2(fil, 0);
-    run_pipeline(first);
-    //restores stdin to fd o
-    dup2(oldin, 0);
-    close(fil);
+  if (input[0] == NULL) {
+      return 0;
   }
+  // Proceed if input is non-empty
+  char* next = input;
+  char* first = strsep(&next, "<");
+  while (next[0] == ' ' || next[0] == '\t') {
+      next++;
+  }
+  while(next[strlen(next) - 1] == ' ' || next[strlen(next) - 1] == '\t') {
+      next[strlen(next) - 1] = 0;
+  }
+  while(first[strlen(first) - 1] == ' ' || first[strlen(first) - 1] == '\t') {
+      first[strlen(first) - 1] = 0;
+  }
+  //copies stdout elsewhere. oldout stores it
+  int oldin = dup(0);
+  //opens the file specified after the <
+  int fil;
+  fil = open(next, O_RDONLY);
+
+  //redirects stdin into the file
+  dup2(fil, 0);
+  run_pipeline(first);
+  //restores stdin to fd o
+  dup2(oldin, 0);
+  close(fil);
   return 0;
 }
 
@@ -297,28 +281,98 @@ void run_cmd_andor(char* input, char mode){
   }
 }
 
+///**
+// *Args: Input string
+// *Returns: status of waitpid
+// *What it does: It parses the input, then checks if the first command is cd or
+// *exit. If so it runs the command. If this is not the case it forks a child
+// *process to run the command, and waits for the child process to run
+// */
+//int run_cmd_fork(char* input){
+//  char ** parse = parse_cmd(input);
+//  // Otherwise, fork and execute the command
+//  pid_t pid = fork();
+//  if (pid==0) {
+//    execvp(parse[0], parse);
+//    // If we get here, it failed
+//    int e_errno = errno;
+//    if (e_errno == ENOENT) {
+//        printf("katsh: %s: no such file or directory\n", parse[0]);
+//    } else if (e_errno == EACCES) {
+//        printf("katsh: %s: permission denied\n", parse[0]);
+//    } else {
+//        printf("katsh: an error has occured. errno: %d\n", e_errno);
+//    }
+//    exit(1);
+//  } else {
+//    int status = 0;
+//    waitpid(pid, &status, 0);
+//    return status;
+//  }
+//}
+
+/**
+ * If the argument, input, is a builtin bash command (e.g. exit and cd), it
+ * runs it appropriately. If it is exit, the current process is exited.
+ * Returns: it returns 1 if it ran a builtin and 0 if `input` did not call
+ * a builtin
+ */
+int handle_builtins(char* input) {
+    char* cmd = (char*) calloc(sizeof(char), strlen(input) + 1);
+    strcpy(cmd, input);
+    char** parse = parse_cmd(cmd);
+    if (strcmp(parse[0], "exit")==0) {
+        free(cmd);
+        exit(0);
+    } else if (strcmp(parse[0], "cd")==0) {
+        chdir(parse[1]);
+        free(cmd);
+        return 1;
+    }
+    free(cmd);
+    return 0;
+}
+
+
 int run_redirectable(char* input) {
-    if(strstr(input, ">>") && !strstr(input, "2>>")){
-	return run_cmd_stdout(input, 1);
+    printf("run_redirectable(%s)\n", input);
+    if (handle_builtins(input)) {
+        return 0;
     }
-    if(strstr(input, "2>") && !strstr(input, "2>>")){
-	return run_cmd_stdout(input, 2);
-    }
-    if(strstr(input, "2>>")){
-	return run_cmd_stdout(input, 3);
-    }
-    if(strstr(input, "&>")){
-	return run_cmd_stdout(input, 4);
-    }
-    if(strstr(input, ">")){
-	return run_cmd_stdout(input, 0);
-    }
-    if(strchr(input, '<')){
-	return run_cmd_stdin(input);
+    printf("run_redirectable(%s)\n", input);
+    pid_t pid = fork();
+    if (pid==0) {
+        int result = 0;
+        if(strchr(input, '<')){
+            result = run_cmd_stdin(input);
+        } else if (strchr(input, '>')){
+            result = run_cmd_stdout(input);
+        } else {
+            // Otherwise, it's just a plain command:
+            printf("running run_pipeline(%s)\n", input);
+            result = run_pipeline(input);
+        }
+        int e_errno = errno;
+        if (result != 0) {
+            char** parsed = parse_cmd(input);
+            if (e_errno == ENOENT) {
+                printf("katsh: %s: no such file or directory\n", parsed[0]);
+            } else if (e_errno == EACCES) {
+                printf("katsh: %s: permission denied\n", parsed[0]);
+            } else {
+                printf("katsh: an error has occured. errno: %d\n", e_errno);
+            }
+        }
+        exit(result);
+    } else {
+        int status = 0;
+        waitpid(pid, &status, 0);
+        return status;
     }
 }
 
 void run_cmd_chain(char* input) {
+    printf("run_cmd_chain(%s)\n", input);
   //Skip whitespace
   while (input[0] == ' ' || input[0] == '\t') {
     input++;
@@ -367,6 +421,7 @@ void run_cmd_semi(char* input){
   if (input[0]) {
     char* next = input;
     char* first = strsep(&next, ";");
+    printf("first: %s\t; next: %s\n", first, next);
     run_cmd_chain(first);
     run_cmd_semi(next);
   }
