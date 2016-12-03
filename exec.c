@@ -121,7 +121,8 @@ int run_cmd_fork(char* input){
 /**
  *Args: Command that contains pipelines
  *Return: 0
- *What it Does: Runs output of one command into another command
+ *What it Does: Runs a pipeline, redirecting stdout of each command to stdin
+ *of next with pipes
  */
 int run_pipeline(char *cmd) {
     char* first = strsep(&cmd, "|");
