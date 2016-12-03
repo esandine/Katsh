@@ -379,11 +379,14 @@ void run_cmd_chain(char* input) {
   }
   char* and_pos = strstr(input, "&&");
   char* or_pos = strstr(input, "||");
-  if (and_pos && or_pos) {
+  printf("and_pos: %p; or_pos: %p, either: %d\n", and_pos, or_pos, and_pos || or_pos);
+  if (and_pos || or_pos) {
+      printf("FOUND A BOOLEAN OPERATOR\n");
       char* next = input;
       int runnext = 0;
-      if(and_pos < or_pos) {
+      if(or_pos == NULL || and_pos < or_pos) {
 	  char* first = strsep(&next, "&");
+          printf("from chain, running %s\n", first);
 	  int status = run_redirectable(first);
 	  runnext = status;
       } else {
