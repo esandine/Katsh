@@ -76,8 +76,12 @@ Files and Function Headers:
 
     /*========int run_pipeline()========
 	  *Args: char* cmd
-	  *Return:
-	  *What it Does: Runs output of one command into another command.
+	  *Return: exit status of last command
+	  *What it does: Run each command in pipeline, with the stdout of each redirected to the stdin of the next. DOES fork in all cases before running command.
     ========*/
 
-
+    /*========int run_pipeline_helper()========
+      *Args: char* cmd
+      *Return: exit status of last command
+      *What it Does: Run each command in pipeline, with the stdout of each redirected to the stdin of the next. Does not fork if there is only one command in pipeline (ie. no pipes).
+    ========*/
