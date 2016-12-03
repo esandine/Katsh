@@ -50,13 +50,36 @@ int run_cmd_fork(char* input){
     return status;
   }
 }
+/**
+ *Args: A command containing 1 or more commands separated by pipes (without redirects,
+ *semicolons, or &&s or ||s).
+ *Return: exit status of last command
+ *What it Does: Run each command in pipeline, with the stdout of each redirected to the
+ *stdin of the next. DOES fork in all cases before running command.
+ */
+int run_pipeline(char* cmd) {
+    if (!strchr(cmd, '|')) {
+        int p = fork();
+        if (p == 0) {
+            run_pipeline_helper(cmd);
+        } else {
+            int status = 0;
+            waitpid(p, &status, 0);
+            return status;
+        }
+    } else {
+        return run_pipeline_helper(cmd);
+    }
+}
 
 /**
- *Args: Command that contains pipelines
- *Return: 0
- *What it Does: Runs output of one command into another command
+ *Args: A command containing 1 or more commands separated by pipes (without redirects,
+ *semicolons, or &&s or ||s).
+ *Return: exit status of last command
+ *What it Does: Run each command in pipeline, with the stdout of each redirected to the
+ *stdin of the next. Does not fork if there is only one command in pipeline (ie. no pipes).
  */
-int run_pipeline(char *cmd) {
+int run_pipeline_helper(char *cmd) {
     char* first = strsep(&cmd, "|");
     char** parsed = parse_cmd(first);
     if (cmd == NULL) {
@@ -85,9 +108,9 @@ int run_pipeline(char *cmd) {
             int pstatus = 0, qstatus = 0;
             waitpid(p, &pstatus, 0);
             waitpid(q, &qstatus, 0);
+            return qstatus;
         }
     }
-    return 0;
 }
 
 
