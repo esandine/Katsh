@@ -11,10 +11,11 @@ What features we included in our totally awesome shell:
 - Dedication to Mr. Kats.
 
 What features we attempted to implement but were unsuccesful at:
-- Nothing here. Time management can really be helpful for these situations.
+- Tab completion.
+- Cycling through previous commands with up and down arrow keys.
 
 Any bugs or things we want you to know about our shell:
-- There aren't any bugs we know of. We used RAID. RAID 10.
+- There aren't any bugs we know of. We used RAID. RAID 10. (Gotta be fast and safe!)
 
 Files and Function Headers:
 
@@ -63,23 +64,14 @@ exec.c
 	  *What it Does: If mode = 1: Executes the first command, and if it works executes the second command If mode = 0: executes the first command and if it fails executes the second command.
     ========*/
 
-    /*========void run_cmd_chain()========
-	  *Args: char* input
-	  *Return: void
-	  *
-    ========*/
-
     /*========int run_pipeline()========
 	  *Args: char* cmd
 	  *Return:
-	  *
+	  *What it Does: Runs output of one command into another command.
     ========*/
 
-
-
-    int num_blanks(char* str);
-    char** parse_cmd(char* input);
-    int run_cmd_fork(char* input);
-    void run_cmd_stdout(char* input);
-    void run_cmd_stdin(char* input);
-    void run_cmd_semi(char* input);
+    /*========int wrath_of_kats()========
+      *Args: None
+      *Returns: It fork bombs the user recursively
+      *What it does: Forks and then calls itself. It acts as a remote force quit for all processes running. Because why not?
+    */
