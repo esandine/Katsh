@@ -1,6 +1,7 @@
 #ifndef CMDS_H
 #define CMDS_H
 
+int run_pipeline_helper(char * cmd);
 int run_pipeline(char * cmd);
 int run_cmd_fork(char* input);
 void run_cmd_stdout(char* input, int mode);
