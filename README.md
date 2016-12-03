@@ -19,9 +19,9 @@ Any bugs or things we want you to know about our shell:
 
 Files and Function Headers:
 
-exec.c (nothing, just the sighandler and the main function)
+- exec.c (nothing, just the sighandler and the main function)
 
-utils.c
+- utils.c
 
     /*========int num_blanks()========
 	  *Args: char* str
@@ -41,7 +41,7 @@ utils.c
       *What it does: Counts the number of spaces then callocs the appropriate ammount of space. It then uses strsep to split the command into a list of arguements.
     ========*/
 
-cmds.c
+- cmds.c
 
      /*========int run_cmd_fork()========
        *Args: char* input
