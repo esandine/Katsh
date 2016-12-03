@@ -114,7 +114,6 @@ int run_cmd_fork(char* input){
  *to a file.
  */
 void run_cmd_stdout(char* input, int mode){
-  printf("%d\n", mode);
   if (input == NULL) {
     return;
   }// Proceed if input is non-empty
