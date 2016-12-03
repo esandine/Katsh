@@ -95,7 +95,7 @@ int run_cmd_fork(char* input){
     chdir(parse[1]);
     return 0;
   } else if (strcmp(parse[0], "wok")==0) {
-    return wrath_of_kats;
+    return wrath_of_kats();
   }
   // Otherwise, fork and execute the command
   pid_t pid = fork();
